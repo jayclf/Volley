@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * An interface for a cache keyed by a String with a byte array as data.
  * 该接口用于以键值对的形式缓存byte数组,键是一个String
  */
 public interface Cache {
