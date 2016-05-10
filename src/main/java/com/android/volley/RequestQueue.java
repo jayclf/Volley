@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley;
 
 import android.os.Handler;
@@ -63,7 +47,7 @@ public class RequestQueue {
     /** 缓存分类队列. */
     private final PriorityBlockingQueue<Request<?>> mCacheQueue = new PriorityBlockingQueue<Request<?>>();
 
-    /** 正在向网络中请求的队列. */
+    /** 网络分类队列. */
     private final PriorityBlockingQueue<Request<?>> mNetworkQueue = new PriorityBlockingQueue<Request<?>>();
 
     /** 网络请求分发器开启的数量，最大同时允许4个线程进行网络请求. */
@@ -169,7 +153,7 @@ public class RequestQueue {
     }
 
     /**
-     * 一个简单的断言和过滤接口, 用于 {@link RequestQueue#cancelAll(RequestFilter)}.
+     * 一个简单的过滤接口, 用于 {@link RequestQueue#cancelAll(RequestFilter)}.
      */
     public interface RequestFilter {
         boolean apply(Request<?> request);
