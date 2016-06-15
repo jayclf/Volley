@@ -1,20 +1,9 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.volley.toolbox;
+
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.widget.ImageView.ScaleType;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
@@ -23,23 +12,17 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyLog;
 
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
-import android.graphics.BitmapFactory;
-import android.widget.ImageView.ScaleType;
-
 /**
- * A canned request for getting an image at a given URL and calling
- * back with a decoded Bitmap.
+ * 一个封装好的请求从指定的URL获取一个Bitmap.
  */
 public class ImageRequest extends Request<Bitmap> {
-    /** Socket timeout in milliseconds for image requests */
+    /** ImageRequest的Socket超时 */
     private static final int IMAGE_TIMEOUT_MS = 1000;
 
-    /** Default number of retries for image requests */
+    /** 重试次数 */
     private static final int IMAGE_MAX_RETRIES = 2;
 
-    /** Default backoff multiplier for image requests */
+    /** 重试一次超时时间乘以2 */
     private static final float IMAGE_BACKOFF_MULT = 2f;
 
     private final Response.Listener<Bitmap> mListener;
@@ -48,32 +31,28 @@ public class ImageRequest extends Request<Bitmap> {
     private final int mMaxHeight;
     private ScaleType mScaleType;
 
-    /** Decoding lock so that we don't decode more than one image at a time (to avoid OOM's) */
+    /** 解码同步锁，用于保证一次只解码一张图片，防止OOM */
     private static final Object sDecodeLock = new Object();
 
     /**
-     * Creates a new image request, decoding to a maximum specified width and
-     * height. If both width and height are zero, the image will be decoded to
-     * its natural size. If one of the two is nonzero, that dimension will be
-     * clamped and the other one will be set to preserve the image's aspect
-     * ratio. If both width and height are nonzero, the image will be decoded to
-     * be fit in the rectangle of dimensions width x height while keeping its
-     * aspect ratio.
+     * 创建一个ImageRequest, 给定能够解码的最大宽和高.
+     * 如果宽和高都指定为0, 该图片将会被解码为正常尺寸.
+     * 如果两者中的一个是非零的，这个维度将被夹紧，另一个将被设置来保持图像的长宽比。
+     * 如果宽度和高度都是非零，图像将被解码以适应在矩形的尺寸宽度×高度，同时保持其高宽比 .
      *
-     * @param url URL of the image
-     * @param listener Listener to receive the decoded bitmap
-     * @param maxWidth Maximum width to decode this bitmap to, or zero for none
-     * @param maxHeight Maximum height to decode this bitmap to, or zero for
-     *            none
-     * @param scaleType The ImageViews ScaleType used to calculate the needed image size.
-     * @param decodeConfig Format to decode the bitmap to
-     * @param errorListener Error listener, or null to ignore errors
+     * @param url image的URL
+     * @param listener 解码监听器
+     * @param maxWidth 最大宽度
+     * @param maxHeight 最大高度
+     * @param scaleType 用于计算图片大小的缩放类型.
+     * @param decodeConfig 格式化要解码的图片
+     * @param errorListener 异常监听器，null将忽略异常
      */
-    public ImageRequest(String url, Response.Listener<Bitmap> listener, int maxWidth, int maxHeight,
-            ScaleType scaleType, Config decodeConfig, Response.ErrorListener errorListener) {
-        super(Method.GET, url, errorListener); 
-        setRetryPolicy(
-                new DefaultRetryPolicy(IMAGE_TIMEOUT_MS, IMAGE_MAX_RETRIES, IMAGE_BACKOFF_MULT));
+    public ImageRequest(String url, Response.Listener<Bitmap> listener, int maxWidth, int maxHeight, ScaleType scaleType, Config decodeConfig, Response.ErrorListener errorListener) {
+        super(Method.GET, url, errorListener);
+        // 设置重试策略
+        setRetryPolicy(new DefaultRetryPolicy(IMAGE_TIMEOUT_MS, IMAGE_MAX_RETRIES, IMAGE_BACKOFF_MULT));
+        // 赋值成员变量
         mListener = listener;
         mDecodeConfig = decodeConfig;
         mMaxWidth = maxWidth;
@@ -82,8 +61,7 @@ public class ImageRequest extends Request<Bitmap> {
     }
 
     /**
-     * For API compatibility with the pre-ScaleType variant of the constructor. Equivalent to
-     * the normal constructor with {@code ScaleType.CENTER_INSIDE}.
+     * 为了兼容API而产生的构造函数. 等效于在构造哦啊函数中使用 {@code ScaleType.CENTER_INSIDE}.
      */
     @Deprecated
     public ImageRequest(String url, Response.Listener<Bitmap> listener, int maxWidth, int maxHeight,
@@ -97,21 +75,18 @@ public class ImageRequest extends Request<Bitmap> {
     }
 
     /**
-     * Scales one side of a rectangle to fit aspect ratio.
+     * 缩放一个侧面来适应宽高比
      *
-     * @param maxPrimary Maximum size of the primary dimension (i.e. width for
-     *        max width), or zero to maintain aspect ratio with secondary
-     *        dimension
-     * @param maxSecondary Maximum size of the secondary dimension, or zero to
-     *        maintain aspect ratio with primary dimension
-     * @param actualPrimary Actual size of the primary dimension
-     * @param actualSecondary Actual size of the secondary dimension
-     * @param scaleType The ScaleType used to calculate the needed image size.
+     * @param maxPrimary 主纬度的最大值,或零保持与第二维度的纵横比
+     * @param maxSecondary 第二纬度的最大值
+     * @param actualPrimary 主纬度的确切值
+     * @param actualSecondary 第二纬度的确切值
+     * @param scaleType 缩放类型
      */
     private static int getResizedDimension(int maxPrimary, int maxSecondary, int actualPrimary,
             int actualSecondary, ScaleType scaleType) {
 
-        // If no dominant value at all, just return the actual.
+        // 没有主要的值，就使用确切值
         if ((maxPrimary == 0) && (maxSecondary == 0)) {
             return actualPrimary;
         }

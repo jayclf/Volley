@@ -13,19 +13,19 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Base class for all network requests.
+ * 所有Request的基类.
  *
- * @param <T> The type of parsed response this request expects.
+ * @param <T> 该Request期望解析的响应类型.
  */
 public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
-     * Default encoding for POST or PUT parameters. See {@link #getParamsEncoding()}.
+     * 默认的 POST 和 PUT 参数的编码. 看这里 {@link #getParamsEncoding()}.
      */
     private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
 
     /**
-     * Supported request methods.
+     * 该Request所支持的请求方式.
      */
     public interface Method {
         int DEPRECATED_GET_OR_POST = -1;
@@ -39,65 +39,60 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         int PATCH = 7;
     }
 
-    /** An event log tracing the lifetime of this request; for debugging. */
+    /** 追踪Request生命周期的事件Log; 用于测试. */
     private final MarkerLog mEventLog = MarkerLog.ENABLED ? new MarkerLog() : null;
 
     /**
-     * Request method of this request.  Currently supports GET, POST, PUT, DELETE, HEAD, OPTIONS,
-     * TRACE, and PATCH.
+     * Request 的请求方式.  当前支持 GET, POST, PUT, DELETE, HEAD, OPTIONS,
+     * TRACE, 和 PATCH.
      */
     private final int mMethod;
 
-    /** URL of this request. */
+    /** 该Request的URL. */
     private final String mUrl;
 
-    /** The redirect url to use for 3xx http responses */
+    /** 重定向 url 用于3XX系列的响应 */
     private String mRedirectUrl;
 
-    /** The unique identifier of the request */
+    /** Request的唯一标识 */
     private String mIdentifier;
 
-    /** Default tag for {@link TrafficStats}. */
+    /** 用于流量统计的Tag {@link TrafficStats}. */
     private final int mDefaultTrafficStatsTag;
 
-    /** Listener interface for errors. */
+    /** 异常以及错误监听器. */
     private Response.ErrorListener mErrorListener;
 
-    /** Sequence number of this request, used to enforce FIFO ordering. */
+    /** Request的序列号, 用于进行 FIFO 排序. */
     private Integer mSequence;
 
-    /** The request queue this request is associated with. */
+    /** 该Request所在的请求队列. */
     private RequestQueue mRequestQueue;
 
-    /** Whether or not responses to this request should be cached. */
+    /** 是否应缓存该请求的响应数据. */
     private boolean mShouldCache = true;
 
-    /** Whether or not this request has been canceled. */
+    /** 是否该请求已被取消. */
     private boolean mCanceled = false;
 
-    /** Whether or not a response has been delivered for this request yet. */
+    /** 该Request的响应是否已经发送 . */
     private boolean mResponseDelivered = false;
 
-    /** The retry policy for this request. */
+    /** Request的重试策略. */
     private RetryPolicy mRetryPolicy;
 
     /**
-     * When a request can be retrieved from cache but must be refreshed from
-     * the network, the cache entry will be stored here so that in the event of
-     * a "Not Modified" response, we can be sure it hasn't been evicted from cache.
+     * 当一个请求可以从cache中检索到但是又必须从网络中刷新时, 缓存的entry将会被存储到这里,以防接收到 "Not Modified" 响应的时候, 来保证它还没有从cache中删除掉.
      */
     private Cache.Entry mCacheEntry = null;
 
-    /** An opaque token tagging this request; used for bulk cancellation. */
+    /** 使用一个不公开的令牌标记这个请求; 用于批量取消. */
     private Object mTag;
 
     /**
-     * Creates a new request with the given URL and error listener.  Note that
-     * the normal response listener is not provided here as delivery of responses
-     * is provided by subclasses, who have a better idea of how to deliver an
-     * already-parsed response.
-     *
-     * @deprecated Use {@link #Request(int, String, com.android.volley.Response.ErrorListener)}.
+     * 使用给定的 URL 和 error listener创建一个新的Request.
+     * 请注意,在这里不提供正常的响应侦听器来提供响应的传递,它的子类有更好解析响应的方式。
+     * @deprecated 使用 {@link #Request(int, String, com.android.volley.Response.ErrorListener)} 将是更好的选择.
      */
     @Deprecated
     public Request(String url, Response.ErrorListener listener) {
@@ -105,10 +100,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Creates a new request with the given method (one of the values from {@link Method}),
-     * URL, and error listener.  Note that the normal response listener is not provided here as
-     * delivery of responses is provided by subclasses, who have a better idea of how to deliver
-     * an already-parsed response.
+     * 使用给定的 URL,error listener以及{@link Method}创建一个新的Request.  Note that the normal response listener is not provided here as
+     * 请注意,在这里不提供正常的响应侦听器来提供响应的传递,它的子类有更好解析响应的方式.
      */
     public Request(int method, String url, Response.ErrorListener listener) {
         mMethod = method;
@@ -121,17 +114,16 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Return the method for this request.  Can be one of the values in {@link Method}.
+     * 返回Request的请求方式. 是 {@link Method} 其中之一.
      */
     public int getMethod() {
         return mMethod;
     }
 
     /**
-     * Set a tag on this request. Can be used to cancel all requests with this
-     * tag by {@link RequestQueue#cancelAll(Object)}.
+     * 为Request设置一个Tag. 可以通过调用{@link RequestQueue#cancelAll(Object)}方法利用该Tag取消所有的Request .
      *
-     * @return This Request object to allow for chaining.
+     * @return 这个允许链接的请求对象.
      */
     public Request<?> setTag(Object tag) {
         mTag = tag;
@@ -139,7 +131,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns this request's tag.
+     * 返回Request的 tag.
      * @see Request#setTag(Object)
      */
     public Object getTag() {
@@ -147,21 +139,21 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * @return this request's {@link com.android.volley.Response.ErrorListener}.
+     * @return 该Request的 {@link com.android.volley.Response.ErrorListener}.
      */
     public Response.ErrorListener getErrorListener() {
         return mErrorListener;
     }
 
     /**
-     * @return A tag for use with {@link TrafficStats#setThreadStatsTag(int)}
+     * @return 用于 {@link TrafficStats#setThreadStatsTag(int)} 的tag
      */
     public int getTrafficStatsTag() {
         return mDefaultTrafficStatsTag;
     }
 
     /**
-     * @return The hashcode of the URL's host component, or 0 if there is none.
+     * @return URL主机组件的hashCode，如果没有返回0.
      */
     private static int findDefaultTrafficStatsTag(String url) {
         if (!TextUtils.isEmpty(url)) {
@@ -177,9 +169,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Sets the retry policy for this request.
+     * 设置Request的重试策略.
      *
-     * @return This Request object to allow for chaining.
+     * @return 这个允许链接的请求对象.
      */
     public Request<?> setRetryPolicy(RetryPolicy retryPolicy) {
         mRetryPolicy = retryPolicy;
@@ -187,7 +179,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Adds an event to this request's event log; for debugging.
+     * 增加一个事件到请求的事件Log; 用于测试.
      */
     public void addMarker(String tag) {
         if (MarkerLog.ENABLED) {
@@ -196,20 +188,20 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Notifies the request queue that this request has finished (successfully or with error).
+     * 通知请求队列，这个请求已经完成（成功或错误）.
      *
-     * <p>Also dumps all events from this request's event log; for debugging.</p>
+     * <p>Dump该Request的所有事件Log; 用于测试.</p>
      */
     void finish(final String tag) {
         if (mRequestQueue != null) {
             mRequestQueue.finish(this);
             onFinish();
         }
+        // Dumping Log
         if (MarkerLog.ENABLED) {
             final long threadId = Thread.currentThread().getId();
             if (Looper.myLooper() != Looper.getMainLooper()) {
-                // If we finish marking off of the main thread, we need to
-                // actually do it on the main thread to ensure correct ordering.
+                // 如果没有在主线程完成标记, 我们需要在主线程Dump以保证正确的序列.
                 Handler mainThread = new Handler(Looper.getMainLooper());
                 mainThread.post(new Runnable() {
                     @Override
@@ -227,17 +219,17 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * clear listeners when finished
+     * 当finish的时候清除所有的监听器
      */
     protected void onFinish() {
         mErrorListener = null;
     }
 
     /**
-     * Associates this request with the given queue. The request queue will be notified when this
-     * request has finished.
+     * 将此请求与给定队列关联.
+     * 请求队列将在该请求完成时通知 .
      *
-     * @return This Request object to allow for chaining.
+     * @return 这个允许链接的请求对象.
      */
     public Request<?> setRequestQueue(RequestQueue requestQueue) {
         mRequestQueue = requestQueue;
@@ -245,9 +237,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Sets the sequence number of this request.  Used by {@link RequestQueue}.
+     * 设置此请求的序列号.  用于 {@link RequestQueue}.
      *
-     * @return This Request object to allow for chaining.
+     * @return 这个允许链接的请求对象.
      */
     public final Request<?> setSequence(int sequence) {
         mSequence = sequence;
@@ -255,7 +247,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the sequence number of this request.
+     * @return 请求的序列号.
      */
     public final int getSequence() {
         if (mSequence == null) {
@@ -265,45 +257,45 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the URL of this request.
+     * @return 返回请求的URL.
      */
     public String getUrl() {
         return (mRedirectUrl != null) ? mRedirectUrl : mUrl;
     }
 
     /**
-     * Returns the URL of the request before any redirects have occurred.
+     * @return 返回重定向发生之前请求的URL.
      */
     public String getOriginUrl() {
     	return mUrl;
     }
 
     /**
-     * Returns the identifier of the request.
+     * @return 返回Request的标记符号.
      */
     public String getIdentifier() {
         return mIdentifier;
     }
 
     /**
-     * Sets the redirect url to handle 3xx http responses.
+     * 设置重定向URL来处理 3xx 类别的http响应.
      */
     public void setRedirectUrl(String redirectUrl) {
     	mRedirectUrl = redirectUrl;
     }
 
     /**
-     * Returns the cache key for this request.  By default, this is the URL.
+     * 返回Request的Cache key.  默认情况下，就是该Request的 URL.
      */
     public String getCacheKey() {
         return mMethod + ":" + mUrl;
     }
 
     /**
-     * Annotates this request with an entry retrieved for it from cache.
-     * Used for cache coherency support.
+     * 注释这个请求从缓存条目检索.
+     * 用于高速缓存一致性的支持.
      *
-     * @return This Request object to allow for chaining.
+     * @return 这个允许链接的请求对象.
      */
     public Request<?> setCacheEntry(Cache.Entry entry) {
         mCacheEntry = entry;
@@ -311,46 +303,43 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the annotated cache entry, or null if there isn't one.
+     * 返回已经注释的 cache entry, 没有的话返回null.
      */
     public Cache.Entry getCacheEntry() {
         return mCacheEntry;
     }
 
     /**
-     * Mark this request as canceled.  No callback will be delivered.
+     * 标记该请求已经Cacle.没有回调会被传送.
      */
     public void cancel() {
         mCanceled = true;
     }
 
     /**
-     * Returns true if this request has been canceled.
+     * 如果Request被取消返回true.
      */
     public boolean isCanceled() {
         return mCanceled;
     }
 
     /**
-     * Returns a list of extra HTTP headers to go along with this request. Can
-     * throw {@link AuthFailureError} as authentication may be required to
-     * provide these values.
-     * @throws AuthFailureError In the event of auth failure
+     * 返回一个额外的HTTP标头列表 .
+     * 会抛出 {@link AuthFailureError} 异常，如果要求授权.
+     * @throws AuthFailureError 授权失败抛出
      */
     public Map<String, String> getHeaders() throws AuthFailureError {
         return Collections.emptyMap();
     }
 
     /**
-     * Returns a Map of POST parameters to be used for this request, or null if
-     * a simple GET should be used.  Can throw {@link AuthFailureError} as
-     * authentication may be required to provide these values.
+     * 返回一个该Request使用的 POST 参数的Map, 如果使用了一个简单的GET则返回null.
+     * 会抛出 {@link AuthFailureError} 异常.
      *
-     * <p>Note that only one of getPostParams() and getPostBody() can return a non-null
-     * value.</p>
-     * @throws AuthFailureError In the event of auth failure
+     * <p>注意只有一个 getPostParams() 和 getPostBody() 会返回一个非空结果.</p>
+     * @throws AuthFailureError 授权失败抛出
      *
-     * @deprecated Use {@link #getParams()} instead.
+     * @deprecated 使用 {@link #getParams()} 替代.
      */
     @Deprecated
     protected Map<String, String> getPostParams() throws AuthFailureError {
@@ -358,18 +347,15 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns which encoding should be used when converting POST parameters returned by
-     * {@link #getPostParams()} into a raw POST body.
+     * 返回 转换 POST 参数为原始的POST内容所使用的编码.
      *
-     * <p>This controls both encodings:
+     * <p>控制两个编码:
      * <ol>
-     *     <li>The string encoding used when converting parameter names and values into bytes prior
-     *         to URL encoding them.</li>
-     *     <li>The string encoding used when converting the URL encoded parameters into a raw
-     *         byte array.</li>
+     *     <li>String编码 当转换参数名和值为byte数组 bytes,进行URL编码的时候.</li>
+     *     <li>String编码 当转换URL为原始byte数组.</li>
      * </ol>
      *
-     * @deprecated Use {@link #getParamsEncoding()} instead.
+     * @deprecated 使用 {@link #getParamsEncoding()} 替代.
      */
     @Deprecated
     protected String getPostParamsEncoding() {
@@ -377,7 +363,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * @deprecated Use {@link #getBodyContentType()} instead.
+     * @deprecated 使用 {@link #getBodyContentType()} 替代.
      */
     @Deprecated
     public String getPostBodyContentType() {
@@ -385,18 +371,15 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the raw POST body to be sent.
+     * 返回要发送的原始的 POST body.
      *
-     * @throws AuthFailureError In the event of auth failure
+     * @throws AuthFailureError 授权失败抛出
      *
-     * @deprecated Use {@link #getBody()} instead.
+     * @deprecated 使用 {@link #getBody()} 替代.
      */
     @Deprecated
     public byte[] getPostBody() throws AuthFailureError {
-        // Note: For compatibility with legacy clients of volley, this implementation must remain
-        // here instead of simply calling the getBody() function because this function must
-        // call getPostParams() and getPostParamsEncoding() since legacy clients would have
-        // overridden these two member functions for POST requests.
+        // 注意: 为了兼容旧的Volley客户端,这种实现必须留在这里而不是简单地调用getbody()功能,因为这个函数必须调用getpostparams()和getpostparamsencoding()以来遗留客户会重写这两个成员函数POST请求 .
         Map<String, String> postParams = getPostParams();
         if (postParams != null && postParams.size() > 0) {
             return encodeParameters(postParams, getPostParamsEncoding());
@@ -405,27 +388,24 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns a Map of parameters to be used for a POST or PUT request.  Can throw
-     * {@link AuthFailureError} as authentication may be required to provide these values.
+     * 返回 用于 POST 或者 PUT 请求使用的参数map.
+     * 抛出{@link AuthFailureError} 异常.
      *
-     * <p>Note that you can directly override {@link #getBody()} for custom data.</p>
+     * <p>可以直接重写 {@link #getBody()} 用于自定义数据.</p>
      *
-     * @throws AuthFailureError in the event of auth failure
+     * @throws AuthFailureError 授权失败抛出
      */
     protected Map<String, String> getParams() throws AuthFailureError {
         return null;
     }
 
     /**
-     * Returns which encoding should be used when converting POST or PUT parameters returned by
-     * {@link #getParams()} into a raw POST or PUT body.
+     * 返回 转换 POST 或者 PUT 参数为原始的POST内容所使用的编码 {@link #getParams()}.
      *
-     * <p>This controls both encodings:
+     * <p>控制两个编码:
      * <ol>
-     *     <li>The string encoding used when converting parameter names and values into bytes prior
-     *         to URL encoding them.</li>
-     *     <li>The string encoding used when converting the URL encoded parameters into a raw
-     *         byte array.</li>
+     *     <li>String编码 当转换参数名和值为byte数组 bytes,进行URL编码的时候.</li>
+     *     <li>String编码 当转换URL为原始byte数组.</li>
      * </ol>
      */
     protected String getParamsEncoding() {
@@ -433,20 +413,19 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the content type of the POST or PUT body.
+     * 返回 POST 或者 PUT 体的content type.
      */
     public String getBodyContentType() {
         return "application/x-www-form-urlencoded; charset=" + getParamsEncoding();
     }
 
     /**
-     * Returns the raw POST or PUT body to be sent.
+     * 返回要发送的原始的 POST 或者 PUT的body.
      *
-     * <p>By default, the body consists of the request parameters in
-     * application/x-www-form-urlencoded format. When overriding this method, consider overriding
-     * {@link #getBodyContentType()} as well to match the new body format.
+     * <p>默认, 该body 包含application/x-www-form-urlencoded格式的请求参数. 重写该方法的时候,推荐也重写
+     * {@link #getBodyContentType()} 方法来和新的body格式保持一致.
      *
-     * @throws AuthFailureError in the event of auth failure
+     * @throws AuthFailureError 授权失败抛出
      */
     public byte[] getBody() throws AuthFailureError {
         Map<String, String> params = getParams();
@@ -457,7 +436,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Converts <code>params</code> into an application/x-www-form-urlencoded encoded string.
+     * 转换 <code>params</code> 为一个 application/x-www-form-urlencoded 编码的字符串.
      */
     private byte[] encodeParameters(Map<String, String> params, String paramsEncoding) {
         StringBuilder encodedParams = new StringBuilder();
@@ -470,14 +449,14 @@ public abstract class Request<T> implements Comparable<Request<T>> {
             }
             return encodedParams.toString().getBytes(paramsEncoding);
         } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException("Encoding not supported: " + paramsEncoding, uee);
+            throw new RuntimeException("不支持的编码格式: " + paramsEncoding, uee);
         }
     }
 
     /**
-     * Set whether or not responses to this request should be cached.
+     * 设置该Request的相应信息是否应该被缓存起来.
      *
-     * @return This Request object to allow for chaining.
+     * @return 这个允许链接的请求对象.
      */
     public final Request<?> setShouldCache(boolean shouldCache) {
         mShouldCache = shouldCache;
@@ -485,15 +464,14 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns true if responses to this request should be cached.
+     * @return 该Request的响应信息可以缓存的时候返回true.
      */
     public final boolean shouldCache() {
         return mShouldCache;
     }
 
     /**
-     * Priority values.  Requests will be processed from higher priorities to
-     * lower priorities, in FIFO order.
+     * 优先级值.  请求将会按照FIFO的顺序按照优先级从高到底一个一个来处理.
      */
     public enum Priority {
         LOW,
@@ -503,79 +481,73 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the {@link Priority} of this request; {@link Priority#NORMAL} by default.
+     * @return 返回Request的优先级 {@link Priority}; 默认是{@link Priority#NORMAL}.
      */
     public Priority getPriority() {
         return Priority.NORMAL;
     }
 
     /**
-     * Returns the socket timeout in milliseconds per retry attempt. (This value can be changed
-     * per retry attempt if a backoff is specified via backoffTimeout()). If there are no retry
-     * attempts remaining, this will cause delivery of a {@link TimeoutError} error.
+     * 返回每次重试的Socket超时毫秒数. (改值可以通过 backoffTimeout()方法设置backoff来修改).
+     * 如果没有重试机会, 将会抛出 {@link TimeoutError} 错误.
      */
     public final int getTimeoutMs() {
         return mRetryPolicy.getCurrentTimeout();
     }
 
     /**
-     * Returns the retry policy that should be used  for this request.
+     * 返回该Request的重试策略.
      */
     public RetryPolicy getRetryPolicy() {
         return mRetryPolicy;
     }
 
     /**
-     * Mark this request as having a response delivered on it.  This can be used
-     * later in the request's lifetime for suppressing identical responses.
+     * 标记改Request已经将响应回传了. 这可以用于在请求的生命周期内避免相同的Response.
      */
     public void markDelivered() {
         mResponseDelivered = true;
     }
 
     /**
-     * Returns true if this request has had a response delivered for it.
+     * 如果这个请求已经为它提供了一个响应，则返回真.
      */
     public boolean hasHadResponseDelivered() {
         return mResponseDelivered;
     }
 
     /**
-     * Subclasses must implement this to parse the raw network response
-     * and return an appropriate response type. This method will be
-     * called from a worker thread.  The response will not be delivered
-     * if you return null.
-     * @param response Response from the network
-     * @return The parsed response, or null in the case of an error
+     * 子类必须实现该方法用于解析原始的网络响应信息并且返回合适的响应类型.
+     * 该方法被子线程调用.返回null响应将不会被送达.
+     * @param response 网络响应
+     * @return 已经解析的响应信息，发生错误返回null
      */
     abstract protected Response<T> parseNetworkResponse(NetworkResponse response);
 
     /**
-     * Subclasses can override this method to parse 'networkError' and return a more specific error.
+     * 子类可以重写该方法 来解析 'networkError' 来返回一个更加确切的错误信息.
      *
-     * <p>The default implementation just returns the passed 'networkError'.</p>
+     * <p>默认的实现只返回一个解析后的 'networkError'.</p>
      *
-     * @param volleyError the error retrieved from the network
-     * @return an NetworkError augmented with additional information
+     * @param volleyError 从网络接收到的error
+     * @return 一个包含额外信息的NetworkError
      */
     protected VolleyError parseNetworkError(VolleyError volleyError) {
         return volleyError;
     }
 
     /**
-     * Subclasses must implement this to perform delivery of the parsed
-     * response to their listeners.  The given response is guaranteed to
-     * be non-null; responses that fail to parse are not delivered.
-     * @param response The parsed response returned by
-     * {@link #parseNetworkResponse(NetworkResponse)}
+     * 子类必须实现该方法来传输响应信息到 listeners.
+     * 给定的response是不会为null的;
+     * 失败的相应信息不会被传递到这里.
+     * @param response 已经解析后的响应信息 {@link #parseNetworkResponse(NetworkResponse)}
      */
     abstract protected void deliverResponse(T response);
 
     /**
-     * Delivers error message to the ErrorListener that the Request was
-     * initialized with.
+     * 传送错误信息到 ErrorListener.
      *
-     * @param error Error details
+     * @param error 错误信息对象
      */
     public void deliverError(VolleyError error) {
         if (mErrorListener != null) {
@@ -584,19 +556,16 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Our comparator sorts from high to low priority, and secondarily by
-     * sequence number to provide FIFO ordering.
+     * 使用比较器按照优先级从高到低排列, 其次按照序列号以FIFO顺序排列.
      */
     @Override
     public int compareTo(Request<T> other) {
         Priority left = this.getPriority();
         Priority right = other.getPriority();
 
-        // High-priority requests are "lesser" so they are sorted to the front.
-        // Equal priorities are sorted by sequence number to provide FIFO ordering.
-        return left == right ?
-                this.mSequence - other.mSequence :
-                right.ordinal() - left.ordinal();
+        // 高优先级比较 "轻量" 所以他们排到前边.
+        // 使用序列号的FIFO队列来比较优先级.
+        return left == right ? this.mSequence - other.mSequence : right.ordinal() - left.ordinal();
     }
 
     @Override
@@ -608,13 +577,13 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     private static long sCounter;
     /**
-     *  sha1(Request:method:url:timestamp:counter)
-     * @param method http method
-     * @param url               http request url
-     * @return sha1 hash string
+     * 生成Request的ID标识
+     * 对:(Request:method:url:timestamp:counter)做SHA1得到
+     * @param method HTTP方法
+     * @param url 请求的URL
+     * @return sha1 hash字符串
      */
     private static String createIdentifier(final int method, final String url) {
-        return InternalUtils.sha1Hash("Request:" + method + ":" + url +
-                ":" + System.currentTimeMillis() + ":" + (sCounter++));
+        return InternalUtils.sha1Hash("Request:" + method + ":" + url + ":" + System.currentTimeMillis() + ":" + (sCounter++));
     }
 }

@@ -17,43 +17,43 @@
 package com.android.volley;
 
 /**
- * Default retry policy for requests.
+ * Request的默认重试策略.
  */
 public class DefaultRetryPolicy implements RetryPolicy {
-    /** The current timeout in milliseconds. */
+    /** 当前的超时毫秒数. */
     private int mCurrentTimeoutMs;
 
-    /** The current retry count. */
+    /** 当前的重试次数. */
     private int mCurrentRetryCount;
 
-    /** The maximum number of attempts. */
+    /** 最大重试次数. */
     private final int mMaxNumRetries;
 
-    /** The backoff multiplier for the policy. */
+    /** 策略乘法器. */
     private final float mBackoffMultiplier;
 
-    /** The default socket timeout in milliseconds */
+    /** 默认的Socket超时毫秒数 */
     public static final int DEFAULT_TIMEOUT_MS = 2500;
 
-    /** The default number of retries */
+    /** 默认的重试次数，不重试 */
     public static final int DEFAULT_MAX_RETRIES = 0;
 
-    /** The default backoff multiplier */
+    /** 默认的乘法器 */
     public static final float DEFAULT_BACKOFF_MULT = 1f;
 
 
     /**
-     * Constructs a new retry policy using the default timeouts.
+     * 使用默认的超时时间构造一个实例.
      */
     public DefaultRetryPolicy() {
         this(DEFAULT_TIMEOUT_MS, DEFAULT_MAX_RETRIES, DEFAULT_BACKOFF_MULT);
     }
 
     /**
-     * Constructs a new retry policy.
-     * @param initialTimeoutMs The initial timeout for the policy.
-     * @param maxNumRetries The maximum number of retries.
-     * @param backoffMultiplier Backoff multiplier for the policy.
+     * 构造一个新的重试策略.
+     * @param initialTimeoutMs 初始化超时时间.
+     * @param maxNumRetries 最大的重试次数.
+     * @param backoffMultiplier 乘法器.
      */
     public DefaultRetryPolicy(int initialTimeoutMs, int maxNumRetries, float backoffMultiplier) {
         mCurrentTimeoutMs = initialTimeoutMs;
@@ -62,7 +62,7 @@ public class DefaultRetryPolicy implements RetryPolicy {
     }
 
     /**
-     * Returns the current timeout.
+     * 返回当前超时时间.
      */
     @Override
     public int getCurrentTimeout() {
@@ -70,7 +70,7 @@ public class DefaultRetryPolicy implements RetryPolicy {
     }
 
     /**
-     * Returns the current retry count.
+     * 返回当前重试次数.
      */
     @Override
     public int getCurrentRetryCount() {
@@ -78,15 +78,15 @@ public class DefaultRetryPolicy implements RetryPolicy {
     }
 
     /**
-     * Returns the backoff multiplier for the policy.
+     * 返回后退乘法器.
      */
     public float getBackoffMultiplier() {
         return mBackoffMultiplier;
     }
 
     /**
-     * Prepares for the next retry by applying a backoff to the timeout.
-     * @param error The error code of the last attempt.
+     * 准备下一次重试.
+     * @param error 上次重试的返回码.
      */
     @Override
     public void retry(VolleyError error) throws VolleyError {
@@ -98,7 +98,7 @@ public class DefaultRetryPolicy implements RetryPolicy {
     }
 
     /**
-     * Returns true if this policy has attempts remaining, false otherwise.
+     * 返回还没有没有重试次数.
      */
     protected boolean hasAttemptRemaining() {
         return mCurrentRetryCount <= mMaxNumRetries;
