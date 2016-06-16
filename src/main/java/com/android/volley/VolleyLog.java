@@ -123,7 +123,7 @@ public class VolleyLog {
             }
         }
 
-        private final List<Marker> mMarkers = new ArrayList<Marker>();
+        private final List<Marker> mMarkers = new ArrayList<>();
         private boolean mFinished = false;
 
         /** Adds a marker to this log with the specified name. */
@@ -159,6 +159,7 @@ public class VolleyLog {
 
         @Override
         protected void finalize() throws Throwable {
+            super.finalize();
             // Catch requests that have been collected (and hence end-of-lifed)
             // but had no debugging output printed for them.
             if (!mFinished) {

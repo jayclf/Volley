@@ -190,9 +190,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /**
      * 通知请求队列，这个请求已经完成（成功或错误）.
      *
-     * <p>Dump该Request的所有事件Log; 用于测试.</p>
+     * <p>同时Dump该Request的所有事件Log;</p>
      */
-    void finish(final String tag) {
+    public void finish(final String tag) {
         if (mRequestQueue != null) {
             mRequestQueue.finish(this);
             onFinish();
@@ -212,7 +212,6 @@ public abstract class Request<T> implements Comparable<Request<T>> {
                 });
                 return;
             }
-
             mEventLog.add(tag, threadId);
             mEventLog.finish(this.toString());
         }
